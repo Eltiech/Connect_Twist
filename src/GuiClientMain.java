@@ -14,7 +14,7 @@ public class GuiClientMain{
             public void run() {
                 try {
                     new GuiClient(serverQueue, clientQueue);
-                } catch (Exception e) {s
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }

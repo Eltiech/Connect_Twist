@@ -1,8 +1,12 @@
 // "C:\\Users\\sumay\\OneDrive\\Pictures\\PP.png";
 
+import javax.sound.sampled.*;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -26,8 +30,18 @@ public class GuiClient extends JFrame {//implements Runnable
     //private int countdown = 10;
 
     // Swing components
+
     private JTextField player1Field; // Input field for player 1's name
     private JTextField player2Field; // Input field for player 2's name
+    private JSpinner connectValuesSpinner;
+    private JSpinner boardWidthSpinner;
+    private JSpinner boardHeightSpinner;
+    private JComboBox<GameType> gameModeBox;
+
+    private JMenuBar menuBar;
+    private JMenu sessionMenu;
+    private JMenuItem restartItem, exitItem;
+
     private JLabel timerLabel; // Label to display the timer
     //private Timer timer; // Timer for the game
     private JLabel turnLabel;
@@ -37,6 +51,8 @@ public class GuiClient extends JFrame {//implements Runnable
     private CircleButton[][] buttons;
     private PieceColor[][] slots;
     private PlayerNumber turn;
+    private byte setLength;
+    private GameType gameType;
     //private boolean isPlayer1Turn = true; // for the turn switching method
     //private Color player1Color;//= Color.GREEN;
     //private Color player2Color;//= Color.BLUE;
@@ -62,11 +78,14 @@ public class GuiClient extends JFrame {//implements Runnable
         //Classic connect four is 7 columns wide, 6 columns high
 
         //colSize / rowSize is confusing, because a column-size of N means there are N rows.
-        //changing to columns and rows. I assume this is why the earlier version of the gui
-        //had the two flipped compared to the classic game.
+        //changing to columns and rows..
         columns = 7;
         rows = 6;
+
+
         timerLength = 20;
+        setLength = 4;
+        gameType = GameType.FIRST_TO_SET;
         waitBetweenTurns = true;
         player1Color = PieceColor.YELLOW;
         player2Color = PieceColor.RED;
@@ -112,7 +131,7 @@ public class GuiClient extends JFrame {//implements Runnable
                                 break;
                             case GAME_OVER:
                                 System.out.println("Received GAME_OVER.");
-                                displayGameOver(ge.getGameOutcome());
+                                displayGameOver(ge.getGameOutcome(),ge.getPlayer1(),ge.getPlayer2());
 //                                switch (ge.getGameOutcome()) {
 //                                    case P1_WIN:
 //                                        break;
@@ -171,7 +190,7 @@ public class GuiClient extends JFrame {//implements Runnable
         beginButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 // Get the player names when the button is clicked
-                getPlayerNames();
+                getGameSettings();
             }
 
         });
@@ -194,15 +213,20 @@ public class GuiClient extends JFrame {//implements Runnable
         // Add the center panel to the main window
         this.add(centerPanel, BorderLayout.CENTER);
 
+//        int[] connectAmmount = { "Session", "Host", "Join", "Exit" };
+//        JComboBox<String> sessionDropdown = new JComboBox<>(sessionOptions);
+
+
         // Make the window visible
         this.setVisible(true);
     }
 
-    private void getPlayerNames() {
+    private void getGameSettings() {
         // Remove all components from the center pane
         centerPanel.removeAll();
         // Set the layout of the center panel to BoxLayout with vertical alignment
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.setBorder(new EmptyBorder(100,0,0,0));
         // Create a panel for player 1's name input
         JPanel player1Panel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         player1Panel.setOpaque(false); // Make the panel transparent
@@ -228,6 +252,41 @@ public class GuiClient extends JFrame {//implements Runnable
         player2Panel.add(player2Label);
         player2Panel.add(player2Field);
 
+        JPanel settingsContainer = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        settingsContainer.setOpaque(false);
+        JPanel settingsPanel = new JPanel(new GridLayout(2, 4));
+
+        settingsPanel.setOpaque(false);
+        JLabel connectValuesLabel = new JLabel("Connect Length:");
+        connectValuesSpinner = new JSpinner(new SpinnerNumberModel(4,3,8,1));
+        JLabel gameModeLabel = new JLabel("Game Mode:");
+        GameType[] gameModeOptions = { GameType.FIRST_TO_SET, GameType.SET_TOTAL };
+        JLabel boardWidthLabel = new JLabel("Board Width:");
+        boardWidthSpinner = new JSpinner(new SpinnerNumberModel(7,3,9,1));
+        JLabel boardHeightLabel = new JLabel("Board Height:");
+        boardHeightSpinner = new JSpinner(new SpinnerNumberModel(6,3,9,1));
+        gameModeBox = new JComboBox<>(gameModeOptions);
+
+        connectValuesLabel.setForeground(Color.WHITE);
+        boardWidthLabel.setForeground(Color.WHITE);
+        boardHeightLabel.setForeground(Color.WHITE);
+        gameModeLabel.setForeground(Color.WHITE);
+
+        settingsPanel.add(connectValuesLabel);
+        settingsPanel.add(connectValuesSpinner);
+
+        settingsPanel.add(gameModeLabel);
+        settingsPanel.add(gameModeBox);
+
+        settingsPanel.add(boardWidthLabel);
+        settingsPanel.add(boardWidthSpinner);
+
+        settingsPanel.add(boardHeightLabel);
+        settingsPanel.add(boardHeightSpinner);
+
+        settingsContainer.add(settingsPanel);
+
+
         // Create a button to start the game
         JButton okButton = new JButton("Start Game");
         okButton.addActionListener(new ActionListener() {
@@ -243,25 +302,11 @@ public class GuiClient extends JFrame {//implements Runnable
                 } else {
                     player1Name = player1Field.getText();
                     player2Name = player2Field.getText();
-                    //System.out.println("Ready set to true");
-                    //this should be elsewhere but it's easiest for now.
-
-                    //connect4 = new Connect4(player1Field.getText(), player2Field.getText());
+                    columns = ((Number)boardWidthSpinner.getValue()).byteValue();
+                    rows = ((Number)boardHeightSpinner.getValue()).byteValue();
+                    setLength = ((Number)connectValuesSpinner.getValue()).byteValue();
+                    gameType = (GameType)gameModeBox.getSelectedItem();
                     displayBoard(); // When the button is clicked and both fields are filled, start the game
-                    // Start playing background music
-//                    try {
-//                        File musicFile = new File("C:\\Users\\sumay\\OneDrive\\Pictures\\background.wav");
-//                        if (musicFile.exists()) {
-//                            AudioInputStream audioIn = AudioSystem.getAudioInputStream(musicFile);
-//                            Clip clip = AudioSystem.getClip();
-//                            clip.open(audioIn);
-//                            clip.loop(Clip.LOOP_CONTINUOUSLY);
-//                        } else {
-//                            System.out.println("The specified audio file was not found: " + musicFile.getAbsolutePath());
-//                        }
-//                    } catch (UnsupportedAudioFileException | IOException | LineUnavailableException ex) {
-//                      ex.printStackTrace();
-//                    }
                 }
             }
         });
@@ -273,6 +318,7 @@ public class GuiClient extends JFrame {//implements Runnable
         centerPanel.add(Box.createVerticalGlue());
         centerPanel.add(player1Panel);
         centerPanel.add(player2Panel);
+        centerPanel.add(settingsContainer);
         centerPanel.add(okButton);
         centerPanel.add(Box.createVerticalGlue());
 
@@ -288,6 +334,30 @@ public class GuiClient extends JFrame {//implements Runnable
         // Set the layout of the frame to BorderLayout
         this.setLayout(new BorderLayout());
 
+        menuBar = new JMenuBar();
+        sessionMenu = new JMenu("Session");
+        restartItem = new JMenuItem("Restart");
+        exitItem = new JMenuItem("Exit");
+
+        restartItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent ev) {
+                started = false; // Restart the game
+                startAndSendCreateGame();
+            }
+        });
+        exitItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent ev) {
+                System.exit(0);
+            }
+        });
+
+
+        sessionMenu.add(restartItem);
+        sessionMenu.add(exitItem);
+        menuBar.add(sessionMenu);
+        this.setJMenuBar(menuBar);
+
+
         // Set the background color of the frame to Blue
         this.setBackground(Color.BLUE);
 
@@ -300,29 +370,18 @@ public class GuiClient extends JFrame {//implements Runnable
         // Validate and repaint the frame to reflect the changes
         this.validate();
         this.repaint();
+        try {
+            InputStream is = getClass().getClassLoader().getResourceAsStream("background.wav");
+            AudioInputStream audioIn = AudioSystem.getAudioInputStream(is);
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioIn);
+            clip.loop(Clip.LOOP_CONTINUOUSLY);
+        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException ex) {
+          ex.printStackTrace();
+        }
         startAndSendCreateGame();
     }
 
-    //this needs to be replaced with a proper menu bar. - Lucas
-    private void handleSessionOption(String option) {
-        switch (option) {
-            case "Host":
-                // Handle host option
-                break;
-            case "Join":
-                // Handle join option
-                break;
-            case "Exit":
-                // Handle exit option
-                int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to exit?", "Exit",
-                        JOptionPane.YES_NO_OPTION);
-                if (confirm == JOptionPane.YES_OPTION) {
-                    System.exit(0);
-                }
-
-                break;
-        }
-    }
 
     private void displayHeaders() {
 
@@ -331,13 +390,13 @@ public class GuiClient extends JFrame {//implements Runnable
         headerJLabel.setFont(new Font("Serif", Font.BOLD, 30));
 
         // Create a panel for the headers and add the title label to it
-        JPanel headerPanel = new JPanel(new GridLayout(4, 1));
+        JPanel headerPanel = new JPanel(new GridLayout(2, 1));
         headerPanel.add(headerJLabel);
         // Set the background color of the header panel to yellow
         ;
 
         // Create a dropdown for the session options
-        String[] sessionOptions = { "Session", "Host", "Join", "Exit" };
+        //String[] sessionOptions = { "Session", "Host", "Join", "Exit" };
 //        JComboBox<String> sessionDropdown = new JComboBox<>(sessionOptions);
 //        sessionDropdown.addActionListener(new ActionListener() {
 //            public void actionPerformed(ActionEvent e) {
@@ -383,7 +442,7 @@ public class GuiClient extends JFrame {//implements Runnable
         turnLabel.setText("Turn:" + (turn == PlayerNumber.PLAYER_1 ? player1Name: player2Name));
     }
 
-    private void displayGameOver(GameOutcome go) {
+    private void displayGameOver(GameOutcome go, Player p1, Player p2) {
         String message;
         switch (go) {
             case DRAW:
@@ -397,6 +456,10 @@ public class GuiClient extends JFrame {//implements Runnable
                 break;
             default://should never get here
                 return;
+        }
+        if (gameType == GameType.SET_TOTAL) {
+            message += String.format("\n Player 1(%s)'s Set Count: %d", player1Name, p1.getSets().size());
+            message += String.format("\n Player 2(%s)'s Set Count: %d", player2Name, p2.getSets().size());
         }
         JOptionPane optionPane = new JOptionPane(message, JOptionPane.INFORMATION_MESSAGE);
         JButton restartButton = new JButton("Restart");
@@ -412,7 +475,7 @@ public class GuiClient extends JFrame {//implements Runnable
         });
         exitButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-//                frame.dispose(); // Dispose the frame
+//                this.dispose(); // Dispose the frame
                 System.exit(0);
             }
         });
@@ -428,8 +491,8 @@ public class GuiClient extends JFrame {//implements Runnable
         }
         if (!started) {
             System.out.println("Sending CREATE_GAME");
-            GameEvent starter = new GameEvent(EventType.CREATE_GAME, columns, rows, GameType.FIRST_TO_SET,
-                    timerLength, waitBetweenTurns, player1Name, player1Color, player2Name, player2Color);
+            GameEvent starter = new GameEvent(EventType.CREATE_GAME, columns, rows, gameType,
+                    setLength, timerLength, waitBetweenTurns, player1Name, player1Color, player2Name, player2Color);
             clientQueue.offer(starter);
             started = true;
         }
@@ -448,81 +511,7 @@ public class GuiClient extends JFrame {//implements Runnable
         JDialog dialog = optionPane.createDialog(this, "Time to switch");
         dialog.setVisible(true);
     }
- //       String message = winner == 0 ? "It was a draw!"
-//                            : winner == 1 ? player1Field.getText() + " wins!" : player2Field.getText() + " wins!";
-//                    JOptionPane optionPane = new JOptionPane(message, JOptionPane.INFORMATION_MESSAGE);
-//                    JButton restartButton = new JButton("Restart");
-//                    JButton exitButton = new JButton("Exit");
-//                    restartButton.addActionListener(new ActionListener() {
-//                        public void actionPerformed(ActionEvent e) {
-//                            // Code to restart the game
-//                            connect4 = new Connect4(player1Field.getText(), player2Field.getText());
-//                            firstMove = true;
-//                            isPlayer1Turn = true;
-//                            countdown = TIMERLIMIT;
-//                            displayBoard(); // Restart the game
-//                            ((JDialog) ((JButton) e.getSource()).getTopLevelAncestor()).dispose(); // Dispose the dialog
-//                        }
-//                    });
-    //}
-//    public void handleTurn(int col) {
-//        boolean result = connect4.placeToken(col);
-//        if (result) {
-//            // Find the lowest empty cell in the column
-//            int row = findLowestEmptyRow(col);
-//            if (row != -1) {
-//                Color color = connect4.isPlayer1Turn() ? player1Color : player2Color;
-//                buttons[row][col].setBackground(color);
-//                switchTurns();
-//
-//                int winner = connect4.isGameOver();
-//                if (winner != -1) {
-//                    String message = winner == 0 ? "It was a draw!"
-//                            : winner == 1 ? player1Field.getText() + " wins!" : player2Field.getText() + " wins!";
-//                    JOptionPane optionPane = new JOptionPane(message, JOptionPane.INFORMATION_MESSAGE);
-//                    JButton restartButton = new JButton("Restart");
-//                    JButton exitButton = new JButton("Exit");
-//                    restartButton.addActionListener(new ActionListener() {
-//                        public void actionPerformed(ActionEvent e) {
-//                            // Code to restart the game
-//                            connect4 = new Connect4(player1Field.getText(), player2Field.getText());
-//                            firstMove = true;
-//                            isPlayer1Turn = true;
-//                            countdown = TIMERLIMIT;
-//                            displayBoard(); // Restart the game
-//                            ((JDialog) ((JButton) e.getSource()).getTopLevelAncestor()).dispose(); // Dispose the dialog
-//                        }
-//                    });
-//                    exitButton.addActionListener(new ActionListener() {
-//                        public void actionPerformed(ActionEvent e) {
-//                            frame.dispose(); // Dispose the frame
-//                            System.exit(0);
-//                        }
-//                    });
-//                    optionPane.setOptions(new Object[] { restartButton, exitButton });
-//                    JDialog dialog = optionPane.createDialog(frame, "Game Over");
-//                    stopTimer();
-//                    dialog.setVisible(true);
-//                }
-//            }
-//        } else {
-//            JOptionPane.showMessageDialog(frame, "Column is full!", "Error", JOptionPane.ERROR_MESSAGE);
-//        }
-//
-//        if (firstMove) {
-//            firstMove = false;
-//            startTimer();
-//        }
-//    }
 
-//    private int findLowestEmptyRow(int col) {
-//        for (int row = rowSize - 1; row >= 0; row--) {
-//            if (buttons[row][col].getBackground() == Color.WHITE) {
-//                return row;
-//            }
-//        }
-//        return -1;
-//    }
 
     private void displayBoardPanel() {
 
@@ -541,6 +530,7 @@ public class GuiClient extends JFrame {//implements Runnable
 
                 // Set the maximum and preferred size of the button
                 buttons[y][x].setMaximumSize(new Dimension(50, 50));
+                buttons[y][x].setMinimumSize(new Dimension(50, 50));
                 buttons[y][x].setPreferredSize(new Dimension(50, 50));
                 buttons[y][x].setBackground(Color.WHITE);
 
@@ -559,7 +549,7 @@ public class GuiClient extends JFrame {//implements Runnable
                     }
                 });
                 buttons[y][x].setMargin(new Insets(0, 0, 0, 0));
-                buttons[y][x].setText(String.format(" <%d,%d> ", x, y));
+                //buttons[y][x].setText(String.format(" <%d,%d> ", x, y));
 
                 // Set the gridx and gridy constraints to the current column and row
                 gbc.gridx = x;
@@ -575,8 +565,8 @@ public class GuiClient extends JFrame {//implements Runnable
 
         // Create a wrapper JPanel to hold the boardPanel
         JPanel wrapperPanel = new JPanel();
-        wrapperPanel.setPreferredSize(new Dimension(800, 800));
-        wrapperPanel.setBackground(Color.BLUE);
+        this.setSize(800, rows*70 + 130);
+        wrapperPanel.setPreferredSize(new Dimension(800, rows*80 + 100));
         wrapperPanel.setLayout(new BorderLayout());
         wrapperPanel.add(boardPanel, BorderLayout.CENTER);
 
@@ -615,82 +605,4 @@ public class GuiClient extends JFrame {//implements Runnable
         }
     }
 
-//    private void startTimer() {
-//        // Set the initial time when the timer starts
-//        final long startTime = System.currentTimeMillis();
-//
-//        TimerTask switchTurnsTask = new TimerTask() {
-//            @Override
-//            public void run() {
-//                // calculate elapsed time
-//                long elapsedTime = System.currentTimeMillis() - startTime;
-//                long elapsedSeconds = elapsedTime / 1000;
-//
-//                SwingUtilities.invokeLater(new Runnable() {
-//                    public void run() {
-//                        if (popupShown) {
-//                            // popupShown = false;
-//                            return;
-//                        }
-//                        if (countdown == 0) {
-//                            // Display Popup
-//                            popupShown = true;
-//                            JOptionPane.showMessageDialog(frame, "Time's up! Switching turns.", "Time's Up",
-//                                    JOptionPane.INFORMATION_MESSAGE);
-//                            popupShown = false;
-//                            switchTurns();
-//                        }
-//                        timerLabel.setText("Time: " + countdown);
-//                        countdown--;
-//                    }
-//                });
-//
-//                // should replace 30 with a variable if we want to have the
-//                // players choose how long turns should last
-//                // if (elapsedSeconds >= 30) {
-//                // // reset the timer
-//                // timer.cancel();
-//                // startTimer();
-//                // // Switch turns
-//                // switchTurns();
-//                // }
-//            }
-//        };
-//
-//        // Create a new Timer
-//        timer = new Timer();
-//
-//        // Schedule the timer task to run every second
-//        timer.scheduleAtFixedRate(switchTurnsTask, 0, 1000);
-//    }
-
-//    private void switchTurns() {
-//        System.out.println("SWITCH TURN!");
-//        // switch turns to the other player
-//        isPlayer1Turn = !isPlayer1Turn;
-//        connect4.switchPlayer();
-//        countdown = TIMERLIMIT;
-//
-//        // refresh display
-//        displayHeaders();
-//    }
-
-//    private void stopTimer() {
-//        time = 0;
-//        if (timer != null) {
-//            timer.cancel();
-//        }
-//    }
-
-//    public static void main(String[] args) {
-//
-//        SwingUtilities.invokeLater(new Runnable() {
-//            public void run() {
-//                // Inside the run method, a new instance of Connect4Game is created.
-//                // This presumably sets up and starts the game.
-//                new Connect4Game();
-//
-//            }
-//        });
-//    }
 }

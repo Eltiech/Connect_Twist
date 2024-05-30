@@ -39,7 +39,7 @@ public class TerminalClient implements Runnable {
         System.out.print("Enter Timer Length: ");
         short timerLength = sc.nextShort();
         try {
-            GameEvent starter = new GameEvent(EventType.CREATE_GAME, cols, rows, GameType.SET_TOTAL, timerLength,
+            GameEvent starter = new GameEvent(EventType.CREATE_GAME, cols, rows, GameType.SET_TOTAL, (byte)4, timerLength,
                     false, p1Name, PieceColor.YELLOW, p2Name, PieceColor.RED);
 
             System.out.println("Sending game parameters..");

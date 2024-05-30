@@ -23,7 +23,7 @@ public class GameEvent {
         }
         return;
     }
-    GameEvent(EventType e, byte columns, byte rows, GameType gameType,
+    GameEvent(EventType e, byte columns, byte rows, GameType gameType, byte setLength,
               short timerLength, boolean waitBetweenTurns, String p1Name, PieceColor p1Color,
               String p2Name, PieceColor p2Color) {
         eventType = e;
@@ -34,6 +34,7 @@ public class GameEvent {
                 this.row = rows;
                 this.gameType = gameType;
                 this.timerLength = timerLength;
+                this.setLength = setLength;
                 this.waitBetweenTurns = waitBetweenTurns;
                 this.p1Name = p1Name;
                 this.p1Color = p1Color;
