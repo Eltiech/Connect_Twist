@@ -12,13 +12,16 @@ public class Game implements Runnable{
         this.clientQueue = clientQueue;
     }
     public boolean start(byte columns, byte rows, GameType gameType, byte setLength,
-                         short timerLength, String p1Name, PieceColor p1Color,
+                         short timerLength, boolean waitBetweenTurns, String p1Name, PieceColor p1Color,
                          String p2Name, PieceColor p2Color) {
+        started = true;
         this.gameOutcome = null;
         this.gameType = gameType;
         this.setLength = setLength;
         board = new Board(columns, rows, setLength);
         this.timerLength = timerLength;
+        this.waitBetweenTurns = waitBetweenTurns;
+        this.turnWaiting = waitBetweenTurns;
         this.p1 = new Player(p1Name, p1Color, PlayerNumber.PLAYER_1);
         this.p2 = new Player(p2Name, p2Color, PlayerNumber.PLAYER_2);
         serverQueue.offer(new GameEvent(EventType.UPDATE_SLOTS, board.getSlots()));
@@ -29,7 +32,7 @@ public class Game implements Runnable{
             lastTimeUpdate = System.currentTimeMillis();
             serverQueue.offer(new GameEvent(EventType.TIME, currentTime));
         }
-        started = true;
+        serverQueue.offer(new GameEvent(EventType.START));
         //todo: return false if something is amiss. or throw an exception.
         return true;
     }
@@ -44,6 +47,8 @@ public class Game implements Runnable{
     private short timerLength;
     private short currentTime;
     private long lastTimeUpdate;
+    private boolean waitBetweenTurns;
+    boolean turnWaiting;
 
     private boolean checkGameOverConditions() {
         return (board.isFull() ||
@@ -76,6 +81,9 @@ public class Game implements Runnable{
         turn = (turn == PlayerNumber.PLAYER_1) ?
                 PlayerNumber.PLAYER_2 : PlayerNumber.PLAYER_1;
         serverQueue.offer(new GameEvent(EventType.TURN, turn));
+        if (waitBetweenTurns) {
+            turnWaiting = true;
+        }
     }
     private Player getActivePlayer() {
         if (turn == PlayerNumber.PLAYER_1) {
@@ -93,12 +101,11 @@ public class Game implements Runnable{
     }
 
     public void run() {
-
         try {
             while(true) {
                 //we could use a timer, but for now with only local clients,
                 //let's just manage time manually in the main game thread.
-                if (timerLength > 0 && started) {
+                if (timerLength > 0 && started && !turnWaiting) {
                     long currentMs = System.currentTimeMillis();
                     if (currentMs - lastTimeUpdate > 1000) {
                         currentTime--;
@@ -120,12 +127,19 @@ public class Game implements Runnable{
                 GameEvent ge = clientQueue.poll(POLLWAIT, TimeUnit.MILLISECONDS);
                 if (ge != null) switch (ge.type()) {
                     case EventType.CREATE_GAME:
+                        System.out.println("Got CREATE GAME");
                         start(ge.getColumn(), ge.getRow(), ge.getGameType(), ge.getSetLength(),
-                                ge.getTimerLength(), ge.getP1Name(), ge.getP1Color(),
+                                ge.getTimerLength(), ge.getWaitBetweenTurns(), ge.getP1Name(), ge.getP1Color(),
                                 ge.getP2Name(), ge.getP2Color());
                         break;
+
+                    case EventType.TURN_READY:
+                        turnWaiting = false;
+                        lastTimeUpdate = System.currentTimeMillis();
+                        break;
                     case EventType.PLACE_PIECE:
-                        //wait why am I trusting the client at all when we already know whose turn
+                        System.out.println("Got PLACE_PIECE");
+                        //wait why am I trusting the client at all when we already know whose turn it is
 //                        Player p;
 //                        switch (ge.getPlayerNumber()) {
 //                            case PLAYER_1:
@@ -144,6 +158,7 @@ public class Game implements Runnable{
                             serverQueue.offer(new GameEvent(EventType.UPDATE_SLOTS, board.getSlots()));
                             if (timerLength > 0) {
                                 lastTimeUpdate = System.currentTimeMillis();
+                                currentTime = timerLength;
                                 serverQueue.offer(new GameEvent(EventType.TIME, currentTime));
                             }
                             if (checkGameOverConditions()) {

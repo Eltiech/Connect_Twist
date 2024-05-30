@@ -131,35 +131,35 @@ public class Connect4 {
         this.currentPlayerOld = playerOld1;
     }
 
-    public boolean placeToken(int column) {
-        boolean result = boardOld.placeToken(column, currentPlayerOld);
-        // if (result && board.checkWin(currentPlayer)) {
-        // System.out.println(currentPlayer.getName() + " wins!");
-        // } else {
-        // switchPlayer();
-        // }
-        // switchPlayer();
-        return result;
-    }
+//    public boolean placeToken(int column) {
+//        boolean result = boardOld.placeToken(column, currentPlayerOld);
+//        // if (result && board.checkWin(currentPlayer)) {
+//        // System.out.println(currentPlayer.getName() + " wins!");
+//        // } else {
+//        // switchPlayer();
+//        // }
+//        // switchPlayer();
+//        return result;
+//    }
 
-    public boolean isPlayer1Turn() {
-        return currentPlayerOld == playerOld1;
-    }
-
-    public void switchPlayer() {
-        currentPlayerOld = (currentPlayerOld == playerOld1) ? playerOld2 : playerOld1;
-    }
-
-    public int isGameOver() {
-        int result = -1;
-        if (boardOld.checkWin(playerOld1)) {
-            result = 1;
-        } else if (boardOld.checkWin(playerOld2)) {
-            result = 2;
-        } else if (boardOld.isDraw()) {
-            result = 0;
-        }
-        return result;
-    }
+//    public boolean isPlayer1Turn() {
+//        return currentPlayerOld == playerOld1;
+//    }
+//
+//    public void switchPlayer() {
+//        currentPlayerOld = (currentPlayerOld == playerOld1) ? playerOld2 : playerOld1;
+//    }
+//
+//    public int isGameOver() {
+//        int result = -1;
+//        if (boardOld.checkWin(playerOld1)) {
+//            result = 1;
+//        } else if (boardOld.checkWin(playerOld2)) {
+//            result = 2;
+//        } else if (boardOld.isDraw()) {
+//            result = 0;
+//        }
+//        return result;
+//    }
 
 }

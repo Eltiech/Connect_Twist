@@ -40,7 +40,7 @@ public class TerminalClient implements Runnable {
         short timerLength = sc.nextShort();
         try {
             GameEvent starter = new GameEvent(EventType.CREATE_GAME, cols, rows, GameType.SET_TOTAL, timerLength,
-                    p1Name, PieceColor.YELLOW, p2Name, PieceColor.RED);
+                    false, p1Name, PieceColor.YELLOW, p2Name, PieceColor.RED);
 
             System.out.println("Sending game parameters..");
             clientQueue.offer(starter);
@@ -84,6 +84,7 @@ public class TerminalClient implements Runnable {
                         break;
 
                 }
+                //wait(10);
             }
             //AnsiConsole.systemUninstall();
         } catch (InterruptedException ex) {

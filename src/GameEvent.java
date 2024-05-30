@@ -11,7 +11,7 @@ public class GameEvent {
 
     //original plan was to have some of these constructors
     //handle multiple event types...I suppose passing Objects
-    //and casting could do that..
+    //and casting could do that..?
     GameEvent(EventType e, PlayerNumber pn, byte b) {
         eventType = e;
         //nothing else will ever GameEvent with these args (yet), but whatever
@@ -24,7 +24,7 @@ public class GameEvent {
         return;
     }
     GameEvent(EventType e, byte columns, byte rows, GameType gameType,
-              short timerLength, String p1Name, PieceColor p1Color,
+              short timerLength, boolean waitBetweenTurns, String p1Name, PieceColor p1Color,
               String p2Name, PieceColor p2Color) {
         eventType = e;
         //nothing else will ever GameEvent with these args (yet), but whatever
@@ -34,6 +34,7 @@ public class GameEvent {
                 this.row = rows;
                 this.gameType = gameType;
                 this.timerLength = timerLength;
+                this.waitBetweenTurns = waitBetweenTurns;
                 this.p1Name = p1Name;
                 this.p1Color = p1Color;
                 this.p2Name = p2Name;
@@ -109,6 +110,9 @@ public class GameEvent {
 
     private short currentTime;
     public short getCurrentTime() { return currentTime; };
+
+    private boolean waitBetweenTurns;
+    public boolean getWaitBetweenTurns() { return waitBetweenTurns; };
 
     private Player player1 = null;
     public Player getPlayer1(){ return player1;}

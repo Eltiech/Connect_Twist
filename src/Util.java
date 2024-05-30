@@ -22,15 +22,15 @@ public class Util {
     }
     public static String printSlots(PieceColor[][] slots, boolean fancy) {
         StringBuilder str = new StringBuilder();
-        int rows = slots[0].length;
-        int cols = slots.length;
+        int rows = slots.length;
+        int cols = slots[0].length;
         if (fancy) {
             AnsiConsole.systemInstall();
             for (byte y = 0; y < rows; y++) {
                 str.append(y);
                 str.append('║');
                 for (byte x = 0; x < cols; x++) {
-                    str.append(slots[x][y].toString());
+                    str.append(slots[y][x].toString());
                 }
                 str.append("║\n");
             }
@@ -52,7 +52,7 @@ public class Util {
         } else {
             for (byte y = 0; y < rows; y++) {
                 for (byte x = 0; x < cols; x++) {
-                    str.append(slots[x][y]);
+                    str.append(slots[y][x]);
                 }
                 str.append('\n');
             }

@@ -20,10 +20,10 @@ public class Board {
         this.cols = cols;
         this.rows = rows;
         this.setLength = setLength;
-        slots = new PieceColor[cols][rows];
-        for (byte x = 0; x < cols; x++) {
-            for (byte y = 0; y < rows; y++) {
-                slots[x][y] = PieceColor.NONE;
+        slots = new PieceColor[rows][cols];
+        for (byte y = 0; y < rows; y++) {
+            for (byte x = 0; x < cols; x++) {
+                slots[y][x] = PieceColor.NONE;
             }
         }
     }
@@ -42,7 +42,7 @@ public class Board {
         }
         //check the top row, see if any are empty
         for (int x = 0; x < cols; x++) {
-            if (slots[x][0] == PieceColor.NONE) {
+            if (slots[0][x] == PieceColor.NONE) {
                 return false;
             }
         }
@@ -53,8 +53,8 @@ public class Board {
     public boolean addPiece(Player p, byte col) {
         //check each place along the column started at the bottom
         for (byte currRow = (byte)(rows - 1); currRow >= 0; currRow --) {
-            if (slots[col][currRow] == PieceColor.NONE) {
-                slots[col][currRow] = p.getColor();
+            if (slots[currRow][col] == PieceColor.NONE) {
+                slots[currRow][col] = p.getColor();
                 findAdjacent(p, new Coord(col,currRow));
                 return true;
             }
@@ -62,7 +62,7 @@ public class Board {
         return false;
     }
     public PieceColor getPiece(Coord c) {
-        return slots[c.getCol()][c.getRow()];
+        return slots[c.getRow()][c.getCol()];
     }
 
     public PieceColor[][] getSlots() {

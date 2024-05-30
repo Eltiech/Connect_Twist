@@ -5,5 +5,6 @@ public enum EventType {
     PLACE_PIECE,
     TIME,
     GAME_OVER,
-    UPDATE_SLOTS
+    UPDATE_SLOTS,
+    TURN_READY
 }
