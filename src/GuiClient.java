@@ -24,6 +24,7 @@ public class GuiClient extends JFrame {//implements Runnable
 
     private boolean ready;
     private boolean started;
+    private boolean dispatcherAdded = false;
 
     // Countdown
     private short timerLength;// = 10;
@@ -37,6 +38,8 @@ public class GuiClient extends JFrame {//implements Runnable
     private JSpinner boardWidthSpinner;
     private JSpinner boardHeightSpinner;
     private JComboBox<GameType> gameModeBox;
+    private JCheckBox musicCheckBox;
+    private JCheckBox waitTurnsCheckBox;
 
     private JMenuBar menuBar;
     private JMenu sessionMenu;
@@ -61,6 +64,8 @@ public class GuiClient extends JFrame {//implements Runnable
     private PieceColor player1Color;//= Color.GREEN;
     private PieceColor player2Color;//= Color.BLUE;
     private boolean waitBetweenTurns;
+    private boolean playMusic;
+    private boolean listenForKeys;
 
     // Create a new instance of the Connect4 class
     //private Connect4 connect4;
@@ -87,8 +92,10 @@ public class GuiClient extends JFrame {//implements Runnable
         setLength = 4;
         gameType = GameType.FIRST_TO_SET;
         waitBetweenTurns = true;
+        playMusic = true;
         player1Color = PieceColor.YELLOW;
         player2Color = PieceColor.RED;
+        listenForKeys = true;
 
         ready = false;
         started = false;
@@ -122,7 +129,9 @@ public class GuiClient extends JFrame {//implements Runnable
                                 System.out.println("GOT TURN");
                                 turn = ge.getPlayerNumber();
                                 updateHeaders();
-                                turnGoDialog((time >= 0) ? "Ready to go?" : "Time's up! Switching turns.");
+                                if (waitBetweenTurns) {
+                                    turnGoDialog((time >= 0) ? "Ready to go?" : "Time's up! Switching turns.");
+                                }
                                 break;
                             case UPDATE_SLOTS:
                                 System.out.println("UPDATE SLOTS");
@@ -254,7 +263,7 @@ public class GuiClient extends JFrame {//implements Runnable
 
         JPanel settingsContainer = new JPanel(new FlowLayout(FlowLayout.CENTER));
         settingsContainer.setOpaque(false);
-        JPanel settingsPanel = new JPanel(new GridLayout(2, 4));
+        JPanel settingsPanel = new JPanel(new GridLayout(3, 4));
 
         settingsPanel.setOpaque(false);
         JLabel connectValuesLabel = new JLabel("Connect Length:");
@@ -266,6 +275,14 @@ public class GuiClient extends JFrame {//implements Runnable
         JLabel boardHeightLabel = new JLabel("Board Height:");
         boardHeightSpinner = new JSpinner(new SpinnerNumberModel(6,3,9,1));
         gameModeBox = new JComboBox<>(gameModeOptions);
+
+        musicCheckBox = new JCheckBox("Play Music", true);
+        musicCheckBox.setOpaque(false);
+        musicCheckBox.setForeground(Color.WHITE);
+        waitTurnsCheckBox = new JCheckBox("Pause Between Turns", true);
+        waitTurnsCheckBox.setOpaque(false);
+        waitTurnsCheckBox.setForeground(Color.WHITE);
+
 
         connectValuesLabel.setForeground(Color.WHITE);
         boardWidthLabel.setForeground(Color.WHITE);
@@ -283,6 +300,12 @@ public class GuiClient extends JFrame {//implements Runnable
 
         settingsPanel.add(boardHeightLabel);
         settingsPanel.add(boardHeightSpinner);
+
+        //quick and dirty way of shifting things over by one
+        settingsPanel.add(new JLabel(""));
+
+        settingsPanel.add(musicCheckBox);
+        settingsPanel.add(waitTurnsCheckBox);
 
         settingsContainer.add(settingsPanel);
 
@@ -306,6 +329,8 @@ public class GuiClient extends JFrame {//implements Runnable
                     rows = ((Number)boardHeightSpinner.getValue()).byteValue();
                     setLength = ((Number)connectValuesSpinner.getValue()).byteValue();
                     gameType = (GameType)gameModeBox.getSelectedItem();
+                    waitBetweenTurns = waitTurnsCheckBox.isSelected();
+                    playMusic = musicCheckBox.isSelected();
                     displayBoard(); // When the button is clicked and both fields are filled, start the game
                 }
             }
@@ -325,6 +350,43 @@ public class GuiClient extends JFrame {//implements Runnable
         // Validate and repaint the frame to reflect the changes
         this.validate();
         this.repaint();
+    }
+
+    private class NumKeyDispatcher implements KeyEventDispatcher {
+        @Override
+        public boolean dispatchKeyEvent(KeyEvent e) {
+            byte col = (byte)(numCharToByte(e.getKeyChar()) - 1);
+            //might be a better way to do this than regex matching, but it works
+            if (col < 0 || col >= columns || !e.paramString().matches("^KEY_RELEASED.*") || !listenForKeys) {
+                return false;
+            }
+            clientQueue.offer(new GameEvent(EventType.PLACE_PIECE, turn, col));
+            return false;
+        }
+    }
+//
+//    private void addKeyListeners() {
+//        this.addKeyListener(new KeyListener(){
+//            @Override
+//            public void keyPressed(KeyEvent e) {
+//                System.out.println("here");
+//                byte col = (byte)(numCharToByte(e.getKeyChar()) - 1);
+//                if (col <= 0 || col > columns) {
+//                    return;
+//                }
+//                clientQueue.offer(new GameEvent(EventType.PLACE_PIECE, turn, col));
+//            }
+//            @Override
+//            public void keyReleased(KeyEvent e) {}
+//            @Override
+//            public void keyTyped(KeyEvent e) {}
+//        });
+//    }
+    private byte numCharToByte(char c) {
+        if (c < '0' || c > '9') {
+            return 0;
+        }
+        return (byte)(c - '0');
     }
 
     private void displayBoard() {
@@ -370,16 +432,23 @@ public class GuiClient extends JFrame {//implements Runnable
         // Validate and repaint the frame to reflect the changes
         this.validate();
         this.repaint();
-        try {
-            InputStream is = getClass().getClassLoader().getResourceAsStream("background.wav");
-            AudioInputStream audioIn = AudioSystem.getAudioInputStream(is);
-            Clip clip = AudioSystem.getClip();
-            clip.open(audioIn);
-            clip.loop(Clip.LOOP_CONTINUOUSLY);
-        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException ex) {
-          ex.printStackTrace();
+        if (playMusic) {
+            try {
+                InputStream is = getClass().getClassLoader().getResourceAsStream("background.wav");
+                AudioInputStream audioIn = AudioSystem.getAudioInputStream(is);
+                Clip clip = AudioSystem.getClip();
+                clip.open(audioIn);
+                clip.loop(Clip.LOOP_CONTINUOUSLY);
+            } catch (UnsupportedAudioFileException | IOException | LineUnavailableException ex) {
+                ex.printStackTrace();
+            }
         }
         startAndSendCreateGame();
+        if (!dispatcherAdded) {
+            KeyboardFocusManager manager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+            manager.addKeyEventDispatcher(new NumKeyDispatcher());
+            dispatcherAdded = true;
+        }
     }
 
 
@@ -437,6 +506,7 @@ public class GuiClient extends JFrame {//implements Runnable
         // Add the header panel to the frame
         this.add(headerPanel, BorderLayout.NORTH);
     }
+
     private void updateHeaders() {
         timerLabel.setText("Time:" + String.format("%-6d", time));
         turnLabel.setText("Turn:" + (turn == PlayerNumber.PLAYER_1 ? player1Name: player2Name));
@@ -499,6 +569,7 @@ public class GuiClient extends JFrame {//implements Runnable
     }
 
     private void turnGoDialog(String message) {
+        listenForKeys = false;
         JOptionPane optionPane = new JOptionPane(message, JOptionPane.INFORMATION_MESSAGE);
         JButton goButton = new JButton("Go!");
         optionPane.setOptions(new Object[] { goButton });
@@ -506,6 +577,7 @@ public class GuiClient extends JFrame {//implements Runnable
             public void actionPerformed(ActionEvent e) {
                 clientQueue.offer(new GameEvent(EventType.TURN_READY));
                 ((JDialog) ((JButton) e.getSource()).getTopLevelAncestor()).dispose();
+                listenForKeys = true;
             }
         });
         JDialog dialog = optionPane.createDialog(this, "Time to switch");
@@ -561,6 +633,11 @@ public class GuiClient extends JFrame {//implements Runnable
                 // Add the button to the boardPanel with the specified constraints
                 boardPanel.add(buttons[y][x], gbc);
             }
+        }
+        gbc.gridy = rows;
+        for (int x = 0; x < columns; x++) {
+            gbc.gridx = x;
+            boardPanel.add(new JLabel(""+(x+1)), gbc);
         }
 
         // Create a wrapper JPanel to hold the boardPanel
