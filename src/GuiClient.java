@@ -13,8 +13,7 @@ import java.util.concurrent.TimeUnit;
 public class GuiClient extends JFrame {//implements Runnable
 
     private final long POLLWAIT = 100;
-    private final long STARTWAIT = 100;
-
+    //the queue the server puts messages on
     private final BlockingQueue<GameEvent> serverQueue;
     //the queue the client puts messages on
     private final BlockingQueue<GameEvent> clientQueue;
@@ -28,7 +27,6 @@ public class GuiClient extends JFrame {//implements Runnable
 
     // Countdown
     private short timerLength;// = 10;
-    //private int countdown = 10;
 
     // Swing components
 
@@ -48,7 +46,7 @@ public class GuiClient extends JFrame {//implements Runnable
     private JLabel timerLabel; // Label to display the timer
     //private Timer timer; // Timer for the game
     private JLabel turnLabel;
-    private int time; // Time elapsed (do we need this?)
+    private short time; // Time elapsed (do we need this?)
     private JPanel centerPanel; // Panel to hold the game board
     // Create a 2D array of CircleButton objects to represent the game board
     private CircleButton[][] buttons;
@@ -66,28 +64,20 @@ public class GuiClient extends JFrame {//implements Runnable
     private boolean waitBetweenTurns;
     private boolean playMusic;
     private boolean listenForKeys;
-
-    // Create a new instance of the Connect4 class
-    //private Connect4 connect4;
-
-    // first move
-    private boolean firstMove = true;
-    // for popup
-    private boolean popupShown = false;
+    
 
     private Thread receiver;
 
     public GuiClient(BlockingQueue serverQueue, BlockingQueue clientQueue) {
 
-        //Initialize these for now since we haven't yet added input fields:
         //Classic connect four is 7 columns wide, 6 columns high
 
         //colSize / rowSize is confusing, because a column-size of N means there are N rows.
         //changing to columns and rows..
+        //todo: use these initial values as the defaults for the gui controls, rather specifying directly in
+        // creation of gui elements
         columns = 7;
         rows = 6;
-
-
         timerLength = 20;
         setLength = 4;
         gameType = GameType.FIRST_TO_SET;
@@ -103,8 +93,6 @@ public class GuiClient extends JFrame {//implements Runnable
         this.serverQueue = serverQueue;
         this.clientQueue = clientQueue;
 
-
-
         // Initialize the main window
         loadStartScreen();
     }
@@ -116,52 +104,38 @@ public class GuiClient extends JFrame {//implements Runnable
                     //System.out.println("outer loop");
                     //if (ready) {
                         //System.out.println("in ready loop");
-                        GameEvent ge = serverQueue.poll(POLLWAIT, TimeUnit.MILLISECONDS);
-                        if (ge != null) switch (ge.type()) {
-                            case START:
-                                break;
-                            case TIME:
-                                System.out.println("GOT TIME");
-                                time = ge.getCurrentTime();
-                                updateHeaders();
-                                break;
-                            case TURN:
-                                System.out.println("GOT TURN");
-                                turn = ge.getPlayerNumber();
-                                updateHeaders();
-                                if (waitBetweenTurns) {
-                                    turnGoDialog((time >= 0) ? "Ready to go?" : "Time's up! Switching turns.");
-                                }
-                                break;
-                            case UPDATE_SLOTS:
-                                System.out.println("UPDATE SLOTS");
-                                slots = ge.getSlots();
-                                updateBoardColors();
-                                break;
-                            case GAME_OVER:
-                                System.out.println("Received GAME_OVER.");
-                                displayGameOver(ge.getGameOutcome(),ge.getPlayer1(),ge.getPlayer2());
-//                                switch (ge.getGameOutcome()) {
-//                                    case P1_WIN:
-//                                        break;
-//                                    case P2_WIN:
-//                                        break;
-//                                    case DRAW:
-//                                        break;
-//                                }
-                                // TreeSet<ComparableTreeSet<Coord>> p1Set = ge.getPlayer1().getSets();
-                                // TreeSet<ComparableTreeSet<Coord>> p2Set = ge.getPlayer2().getSets();
-                                // System.out.println("Player 1 set count: " + p1Set.size());
-                                // System.out.println("Player 1 sets: " + Util.coordSetSetToString(p1Set));
-                                // System.out.println("Player 2 set count: " + p2Set.size());
-                                // System.out.println("Player 2 sets: " + Util.coordSetSetToString(p2Set));
-                                break;
+                    GameEvent ge = serverQueue.poll(POLLWAIT, TimeUnit.MILLISECONDS);
+                    if (ge != null) switch (ge.type()) {
+                        case START:
+                            break;
+                        case TIME:
+                            System.out.println("GOT TIME");
+                            short tempTime = ge.getCurrentTime();
+                            //it goes to -1, because displaying 0 for a moment looks nice, but the -1
+                            //can become visible if waitBetweenTurns is on. We don't want that.
+                            time = tempTime >= 0 ? tempTime : 0;
+                            updateHeaders();
+                            break;
+                        case TURN:
+                            System.out.println("GOT TURN");
+                            turn = ge.getPlayerNumber();
+                            updateHeaders();
+                            if (waitBetweenTurns) {
+                                turnGoDialog((time >= 0) ? "Ready to go?" : "Time's up! Switching turns.");
+                            }
+                            break;
+                        case UPDATE_SLOTS:
+                            System.out.println("UPDATE SLOTS");
+                            slots = ge.getSlots();
+                            updateBoardColors();
+                            break;
+                        case GAME_OVER:
+                            System.out.println("Received GAME_OVER.");
+                            displayGameOver(ge.getGameOutcome(),ge.getPlayer1(),ge.getPlayer2());
+                            break;
 
-                        }
                     }
-                    //just to keep the thread from 100%ing
-                    //wait(10);
-               // }
+                }
             } catch (InterruptedException ex) {
 
             }
@@ -364,24 +338,7 @@ public class GuiClient extends JFrame {//implements Runnable
             return false;
         }
     }
-//
-//    private void addKeyListeners() {
-//        this.addKeyListener(new KeyListener(){
-//            @Override
-//            public void keyPressed(KeyEvent e) {
-//                System.out.println("here");
-//                byte col = (byte)(numCharToByte(e.getKeyChar()) - 1);
-//                if (col <= 0 || col > columns) {
-//                    return;
-//                }
-//                clientQueue.offer(new GameEvent(EventType.PLACE_PIECE, turn, col));
-//            }
-//            @Override
-//            public void keyReleased(KeyEvent e) {}
-//            @Override
-//            public void keyTyped(KeyEvent e) {}
-//        });
-//    }
+
     private byte numCharToByte(char c) {
         if (c < '0' || c > '9') {
             return 0;
@@ -461,29 +418,8 @@ public class GuiClient extends JFrame {//implements Runnable
         // Create a panel for the headers and add the title label to it
         JPanel headerPanel = new JPanel(new GridLayout(2, 1));
         headerPanel.add(headerJLabel);
-        // Set the background color of the header panel to yellow
-        ;
-
-        // Create a dropdown for the session options
-        //String[] sessionOptions = { "Session", "Host", "Join", "Exit" };
-//        JComboBox<String> sessionDropdown = new JComboBox<>(sessionOptions);
-//        sessionDropdown.addActionListener(new ActionListener() {
-//            public void actionPerformed(ActionEvent e) {
-//                // When an option is selected, call the handleSessionOption() method to handle
-//                // it
-//                String selectedOption = (String) sessionDropdown.getSelectedItem();
-//                if (!"Session".equals(selectedOption)) {
-//                    handleSessionOption(selectedOption);
-//                    // After handling the option, set the selected item back to "Session"
-//                    sessionDropdown.setSelectedItem("Session");
-//                }
-//            }
-//        });
-        // Add the dropdown to the header panel
-        //headerPanel.add(sessionDropdown);
 
         // Create a label for the timer
-
         timerLabel = new JLabel("Time:" + String.format("%-6d", time), SwingConstants.LEFT);
 
         // Create a label for the turn
