@@ -2,6 +2,12 @@
 
 Our code is a Java-based implementation of the classic game of Connect 4, except with a twist! This game has timed turns and the gameboard dimensions can be customized and changed. This game supports up to 2 players and has an easy-to-interact-with GUI. There are proper win condition checks and some basic error handling capabilities.
 
+Note: This code started with work in the following repos:
+* https://github.com/CocoaPuff2/CSS-360-Project--Sailors-Connect4-Twist-/
+* https://github.com/SumayaYusuf/Connect-4-Game-
+
+However, as integrating the back-end/logic thread and the BlockingQueue<GameEvent> system required reworking and restructuring of the project, the final result of that work is located in this repository here. Still todo: port earlier tests etc from these repos.
+
 ## Table of Contents
 - [Features](#features)
 - [Requirements](#requirements)
