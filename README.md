@@ -6,7 +6,7 @@ Note: This code started with work in the following repos:
 * https://github.com/CocoaPuff2/CSS-360-Project--Sailors-Connect4-Twist-/
 * https://github.com/SumayaYusuf/Connect-4-Game-
 
-However, as integrating the back-end/logic thread and the BlockingQueue<GameEvent> system required reworking and restructuring of the project, the final result of that work is located in this repository here. Still todo: port earlier tests etc from these repos.
+However, as integrating the back-end/logic thread and the BlockingQueue<GameEvent> system required reworking and restructuring of the project, the final result of that work is located in this repository here. Still todo: port earlier tests etc from these repos/their branches.
 
 ## Table of Contents
 - [Features](#features)
