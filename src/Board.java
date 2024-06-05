@@ -27,6 +27,13 @@ public class Board {
             }
         }
     }
+    //used for debug purposes, and perhaps future "resume" functionality
+    public Board(PieceColor[][] slotsArr, byte setLength) {
+        this.cols = (byte)slotsArr[0].length;
+        this.rows = (byte)slotsArr.length;
+        this.setLength = setLength;
+        slots = slotsArr;
+    }
     public byte getRows() {
         return rows;
     }
